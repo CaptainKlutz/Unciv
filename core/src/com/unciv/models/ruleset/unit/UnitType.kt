@@ -72,7 +72,7 @@ enum class UnitType{
                 || this==Missile
     }
 
-    fun isMissileUnit():Boolean{
+    fun isMissile():Boolean{
         return this == Missile
     }
 

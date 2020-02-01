@@ -110,7 +110,7 @@ class WorldScreen(val viewingCiv:CivilizationInfo) : CameraStageBaseScreen() {
         val tileToCenterOn: Vector2 =
                 when {
                     viewingCiv.cities.isNotEmpty() -> viewingCiv.getCapital().location
-                    viewingCiv.getCivUnits().isNotEmpty() -> viewingCiv.getCivUnits().first().getTile().position
+                    viewingCiv.getCivUnits().any() -> viewingCiv.getCivUnits().first().getTile().position
                     else -> Vector2.Zero
                 }
         mapHolder.setCenterPosition(tileToCenterOn,true)
@@ -209,8 +209,8 @@ class WorldScreen(val viewingCiv:CivilizationInfo) : CameraStageBaseScreen() {
                 !gameInfo.oneMoreTurnMode && gameInfo.civilizations.any { it.victoryManager.hasWon() } -> game.setScreen(VictoryScreen())
                 viewingCiv.policies.freePolicies > 0 && viewingCiv.policies.canAdoptPolicy() -> game.setScreen(PolicyPickerScreen(this))
                 viewingCiv.greatPeople.freeGreatPeople > 0 -> game.setScreen(GreatPersonPickerScreen(viewingCiv))
-                viewingCiv.popupAlerts.any() -> AlertPopup(this, viewingCiv.popupAlerts.first())
-                viewingCiv.tradeRequests.isNotEmpty() -> TradePopup(this)
+                viewingCiv.popupAlerts.any() -> AlertPopup(this, viewingCiv.popupAlerts.first()).open()
+                viewingCiv.tradeRequests.isNotEmpty() -> TradePopup(this).open()
             }
         }
         updateNextTurnButton(hasOpenPopups()) // This must be before the notifications update, since its position is based on it
@@ -256,7 +256,7 @@ class WorldScreen(val viewingCiv:CivilizationInfo) : CameraStageBaseScreen() {
             return "Conquer a city!\nBring an enemy city down to low health > " +
                     "\nEnter the city with a melee unit"
         if(viewingCiv.getCivUnits().any { it.type.isAirUnit() } && !completedTasks.contains("Move an air unit"))
-            return "Move an air unit!\nSelect an air unit > select another city withing range > " +
+            return "Move an air unit!\nSelect an air unit > select another city within range > " +
                     "\nMove the unit to the other city"
         if(!completedTasks.contains("See your stats breakdown"))
             return "See your stats breakdown!\nEnter the Overview screen (top right corner) >" +

@@ -24,7 +24,6 @@ import com.unciv.models.ruleset.tile.ResourceSupplyList
 import com.unciv.models.ruleset.unit.BaseUnit
 import com.unciv.models.stats.Stats
 import com.unciv.models.translations.tr
-import com.unciv.ui.VictoryScreen
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -194,7 +193,7 @@ class CivilizationInfo {
 
 
     //region Units
-    fun getCivUnits(): List<MapUnit> = units
+    fun getCivUnits(): Sequence<MapUnit> = units.asSequence()
 
     fun addUnit(mapUnit: MapUnit, updateCivInfo:Boolean=true){
         val newList = ArrayList(units)
@@ -221,12 +220,12 @@ class CivilizationInfo {
 
     fun getDueUnits() = getCivUnits().filter { it.due && it.isIdle() }
 
-    fun shouldGoToDueUnit() = UncivGame.Current.settings.checkForDueUnits && getDueUnits().isNotEmpty()
+    fun shouldGoToDueUnit() = UncivGame.Current.settings.checkForDueUnits && getDueUnits().any()
 
     fun getNextDueUnit(): MapUnit? {
         val dueUnits = getDueUnits()
-        if(dueUnits.isNotEmpty()) {
-            val unit = dueUnits[0]
+        if(dueUnits.any()) {
+            val unit = dueUnits.first()
             unit.due = false
             return unit
         }
@@ -307,6 +306,14 @@ class CivilizationInfo {
             leaderName += " (" + "Human".tr() + " - " + "Hotseat".tr() + ")"
         else leaderName += " (" + "Human".tr() + " - " + "Multiplayer".tr() + ")"
         return leaderName
+    }
+
+    fun canSignResearchAgreement(): Boolean {
+        if(!tech.getTechUniques().contains("Enables Research agreements")) return false
+        if(gold < getResearchAgreementCost()) return false
+        if (gameInfo.ruleSet.technologies.values
+                .none { tech.canBeResearched(it.name) && !tech.isResearched(it.name) }) return false
+        return true
     }
     //endregion
 
@@ -400,7 +407,7 @@ class CivilizationInfo {
         if (!isBarbarian() && gold < -100 && nextTurnStats.gold.toInt() < 0) {
             for (i in 1 until (gold / -100)) {
                 var civMilitaryUnits = getCivUnits().filter { !it.type.isCivilian() }
-                if (civMilitaryUnits.isNotEmpty()) {
+                if (civMilitaryUnits.any()) {
                     val unitToDisband = civMilitaryUnits.first()
                     unitToDisband.destroy()
                     civMilitaryUnits -= unitToDisband
@@ -495,7 +502,7 @@ class CivilizationInfo {
         updateStatsForNextTurn()
     }
 
-    fun goldCostOfSignResearchAgreement(): Int {
+    fun getResearchAgreementCost(): Int {
         // https://forums.civfanatics.com/resources/research-agreements-bnw.25568/
         val basicGoldCostOfSignResearchAgreement = when(getEra()){
             TechEra.Medieval, TechEra.Renaissance -> 250
@@ -534,13 +541,13 @@ class CivilizationInfo {
 
             if (newAllyName != "") {
                 val newAllyCiv = gameInfo.getCivilization(newAllyName)
-                newAllyCiv.addNotification("We have allied with [${civName}].", Color.GREEN)
+                newAllyCiv.addNotification("We have allied with [${civName}].", getCapital().location, Color.GREEN)
                 newAllyCiv.updateViewableTiles()
                 newAllyCiv.updateDetailedCivResources()
             }
             if (oldAllyName != "") {
                 val oldAllyCiv = gameInfo.getCivilization(oldAllyName)
-                oldAllyCiv.addNotification("We have lost alliance with [${civName}].", Color.RED)
+                oldAllyCiv.addNotification("We have lost alliance with [${civName}].", getCapital().location, Color.RED)
                 oldAllyCiv.updateViewableTiles()
                 oldAllyCiv.updateDetailedCivResources()
             }

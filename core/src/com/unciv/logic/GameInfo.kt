@@ -80,7 +80,9 @@ class GameInfo {
 
         switchTurn()
 
-        while(thisPlayer.playerType==PlayerType.AI){
+        while (thisPlayer.playerType == PlayerType.AI
+            || UncivGame.Current.simulateUntilTurnForDebug > turns
+        ) {
             if(thisPlayer.isBarbarian() || !thisPlayer.isDefeated()) {
                 NextTurnAutomation().automateCivMoves(thisPlayer)
 
@@ -146,7 +148,7 @@ class GameInfo {
         }
 
         val totalBarbariansAllowedOnMap = encampments.size * 3
-        var extraBarbarians = totalBarbariansAllowedOnMap - getBarbarianCivilization().getCivUnits().size
+        var extraBarbarians = totalBarbariansAllowedOnMap - getBarbarianCivilization().getCivUnits().count()
 
         for (tile in tileMap.values.filter { it.improvement == Constants.barbarianEncampment }) {
             if (extraBarbarians <= 0) break

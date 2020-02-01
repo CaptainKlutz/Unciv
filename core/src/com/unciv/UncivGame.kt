@@ -41,6 +41,12 @@ class UncivGame(
     /** For when you need to test something in an advanced game and don't have time to faff around */
     val superchargedForDebug = false
 
+    /** Simulate until this turn on the first "Next turn" button press. 
+     *  Does not update World View changes until finished.
+     *  Set to 0 to disable.
+     */
+    val simulateUntilTurnForDebug: Int = 0
+
     var rewriteTranslationFiles = false
 
     lateinit var worldScreen: WorldScreen
@@ -66,6 +72,8 @@ class UncivGame(
         // So it's basically a long set of deferred actions.
         settings = GameSaver().getGeneralSettings() // needed for the screen
         screen = LoadingScreen()
+
+        Gdx.graphics.isContinuousRendering = settings.continuousRendering
 
         thread(name="LoadJSON") {
             RulesetCache.loadRulesets()

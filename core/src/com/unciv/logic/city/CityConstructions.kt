@@ -116,6 +116,7 @@ class CityConstructions {
     fun isBuilt(buildingName: String): Boolean = builtBuildings.contains(buildingName)
     fun isBeingConstructed(constructionName: String): Boolean = currentConstruction == constructionName
     fun isEnqueued(constructionName: String): Boolean = constructionQueue.contains(constructionName)
+    fun isBeingConstructedOrEnqueued(constructionName: String): Boolean = isBeingConstructed(constructionName) || isEnqueued(constructionName)
 
     fun isQueueFull(): Boolean = constructionQueue.size == queueMaxSize
     fun isQueueEmpty(): Boolean = constructionQueue.isEmpty()
@@ -125,16 +126,29 @@ class CityConstructions {
         return currentConstruction is Building && currentConstruction.isWonder
     }
 
+    /** If the city is constructing multiple units of the same type, subsequent units will require the full cost  */
+    fun isFirstConstructionOfItsKind(constructionQueueIndex: Int, name: String): Boolean {
+        // idx = 1 is the currentConstruction, so it is the first
+        if (constructionQueueIndex == -1)
+            return true
+
+        // if the construction name is the same as the current construction, it isn't the first
+        return !isBeingConstructed(name) &&
+                constructionQueueIndex == constructionQueue.indexOfFirst{it == name}
+    }
+
+
     internal fun getConstruction(constructionName: String): IConstruction {
         val gameBasics = cityInfo.getRuleset()
-        if (gameBasics.buildings.containsKey(constructionName))
-            return gameBasics.buildings[constructionName]!!
-        else if (gameBasics.units.containsKey(constructionName))
-            return gameBasics.units[constructionName]!!
-        else{
-            if(constructionName=="") return getConstruction("Nothing")
-            val special = SpecialConstruction.getSpecialConstructions().firstOrNull{it.name==constructionName}
-            if(special!=null) return special
+        when {
+            gameBasics.buildings.containsKey(constructionName) -> return gameBasics.buildings[constructionName]!!
+            gameBasics.units.containsKey(constructionName) -> return gameBasics.units[constructionName]!!
+            constructionName=="" -> return getConstruction("Nothing")
+            else -> {
+                val special = SpecialConstruction.getSpecialConstructions()
+                        .firstOrNull{it.name==constructionName}
+                if(special!=null) return special
+            }
         }
 
         class NotBuildingOrUnitException(message:String):Exception(message)
@@ -151,14 +165,17 @@ class CityConstructions {
         else return 0
     }
 
-    fun getRemainingWork(constructionName: String): Int {
+    fun getRemainingWork(constructionName: String, useStoredProduction: Boolean = true): Int {
         val constr = getConstruction(constructionName)
-        if (constr is SpecialConstruction) return 0
-        return constr.getProductionCost(cityInfo.civInfo) - getWorkDone(constructionName)
+        return when {
+            constr is SpecialConstruction -> 0
+            useStoredProduction -> constr.getProductionCost(cityInfo.civInfo) - getWorkDone(constructionName)
+            else -> constr.getProductionCost(cityInfo.civInfo)
+        }
     }
 
-    fun turnsToConstruction(constructionName: String): Int {
-        val workLeft = getRemainingWork(constructionName)
+    fun turnsToConstruction(constructionName: String, useStoredProduction: Boolean = true): Int {
+        val workLeft = getRemainingWork(constructionName, useStoredProduction)
         if(workLeft < 0) // we've done more work than actually necessary - possible if circumstances cause buildings to be cheaper later
             return 1 // we'll finish this next turn
 
@@ -336,30 +353,30 @@ class CityConstructions {
         }
     }
 
-    fun removeFromQueue(idx: Int) {
-        // idx -1 is the current construction
-        if (idx < 0) {
+    fun removeFromQueue(constructionQueueIndex: Int) {
+        // constructionQueueIndex -1 is the current construction
+        if (constructionQueueIndex < 0) {
             // To prevent Construction Automation
             if (constructionQueue.isEmpty()) constructionQueue.add("Nothing")
             cancelCurrentConstruction()
         } else
-            constructionQueue.removeAt(idx)
+            constructionQueue.removeAt(constructionQueueIndex)
     }
 
-    fun higherPrio(idx: Int) {
+    fun raisePriority(constructionQueueIndex: Int) {
         // change current construction
-        if(idx == 0) {
+        if(constructionQueueIndex == 0) {
             // Add current construction to queue after the first element
             constructionQueue.add(1, currentConstruction)
             cancelCurrentConstruction()
         }
         else
-            constructionQueue.swap(idx-1, idx)
+            constructionQueue.swap(constructionQueueIndex-1, constructionQueueIndex)
     }
 
     // Lowering == Highering next element in queue
-    fun lowerPrio(idx: Int) {
-        higherPrio(idx+1)
+    fun lowerPriority(constructionQueueIndex: Int) {
+        raisePriority(constructionQueueIndex+1)
     }
 
     //endregion

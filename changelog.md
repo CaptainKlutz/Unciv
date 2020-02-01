@@ -1,3 +1,54 @@
+## 3.5.8
+
+Buying current construction no longer removes other items from the queue - by reversi
+
+Resolved #1757 - Can now see version when running from a desktop Jar
+
+Fixed crash in city-state influence notification
+
+Solved ANR when waiting for the list of maps
+
+Resolved #1808 - Disabled problematic declaration of friendship
+
+Translation updates
+
+
+## 3.5.7
+
+
+Added Non-continuous rendering setting, to disable animations and save battery - by reversi
+
+Add missing Forge and Seaport production bonus uniques - by Teague Lander
+
+Fixed anti air units intercept range
+
+Fixed aerial transportation crashing bug
+
+Add specialist slot description for buildings that provide them - by Teague Lander
+
+Quick access to diplomacy screen with other civilizations by tapping city buttons - by ltrcao
+
+Translation updates
+
+
+## 3.5.6
+
+Research agreements! - by lishaoxia1985
+
+Exploring units no longer auto-enter city states
+
+Map editor menu fix - by lyrjie
+
+Can no longer acquire another player's tiles in multiplayer - by lyrjie
+
+Specialist allocation is immediately viewable on the City screen
+
+Legalism fix - by reversi
+
+Fix #1759: correct 'turns to construction' for multiple units of the same type - by reversi
+
+Translation updates
+
 ## 3.5.5
 
 Aircraft Carriers added - by ltrcao and Jack Rainy

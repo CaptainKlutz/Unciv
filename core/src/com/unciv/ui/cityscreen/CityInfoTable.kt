@@ -18,7 +18,7 @@ import java.text.DecimalFormat
 class CityInfoTable(private val cityScreen: CityScreen) : Table(CameraStageBaseScreen.skin) {
     private val pad = 10f
 
-    private val showConstructionsTableButton = TextButton("Show construction queue", skin)
+    private val showConstructionsTableButton = TextButton("Show construction queue".tr(), skin)
     private val scrollPane: ScrollPane
     private val innerTable = Table(skin)
 
@@ -56,13 +56,13 @@ class CityInfoTable(private val cityScreen: CityScreen) : Table(CameraStageBaseS
         val titleTable = Table().background(ImageGetter.getBackground(ImageGetter.getBlue()))
         val width = cityScreen.stage.width/4 - 2*pad
         val showHideTableWrapper = Table()
-        showHideTableWrapper.add(showHideTable).width(width)
+        showHideTableWrapper.add(showHideTable).minWidth(width)
         titleTable.add(str.toLabel(fontSize = 24))
         titleTable.onClick {
             if(showHideTableWrapper.hasChildren()) showHideTableWrapper.clear()
-            else showHideTableWrapper.add(showHideTable).width(width)
+            else showHideTableWrapper.add(showHideTable).minWidth(width)
         }
-        add(titleTable).width(width).row()
+        add(titleTable).minWidth(width).row()
         add(showHideTableWrapper).row()
     }
 
@@ -95,7 +95,7 @@ class CityInfoTable(private val cityScreen: CityScreen) : Table(CameraStageBaseS
                                     cityScreen.city.sellBuilding(building.name)
                                     cityScreen.city.cityStats.update()
                                     cityScreen.update()
-                                }, cityScreen)
+                                }, cityScreen).open()
                     }
                     if (cityScreen.city.hasSoldBuildingThisTurn || cityScreen.city.isPuppet
                             || !UncivGame.Current.worldScreen.isPlayersTurn)

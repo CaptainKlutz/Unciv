@@ -58,6 +58,12 @@ enum class DiplomaticModifiers{
 }
 
 class DiplomacyManager() {
+    
+    companion object {
+        /** The value city-state influence can't go below */
+        const val MINIMUM_INFLUENCE = -60f
+    }
+    
     @Transient lateinit var civInfo: CivilizationInfo
     // since this needs to be checked a lot during travel, putting it in a transient is a good performance booster
     @Transient var hasOpenBorders=false
@@ -76,8 +82,10 @@ class DiplomacyManager() {
      * As for why it's String and not DiplomaticModifier see FlagsCountdown comment */
     var diplomaticModifiers = HashMap<String,Float>()
 
-    /** For city-states. Influence is saved in the CITY STATE -> major civ Diplomacy, NOT in the major civ -> cty state diplomacy. */
+    /** For city-states. Influence is saved in the CITY STATE -> major civ Diplomacy, NOT in the major civ -> cty state diplomacy.
+     *  Won't go below [MINIMUM_INFLUENCE] */
     var influence = 0f
+        set(value) { field = max(value, MINIMUM_INFLUENCE) }
 
     /** For city-states. Resting point is the value of Influence at which it ceases changing by itself */
     var restingPoint = 0f
@@ -213,6 +221,14 @@ class DiplomacyManager() {
     /** Returns the [civilizations][CivilizationInfo] that know about both sides ([civInfo] and [otherCiv]) */
     fun getCommonKnownCivs(): Set<CivilizationInfo> = civInfo.getKnownCivs().intersect(otherCiv().getKnownCivs())
 
+    /** Returns true when the [civInfo]'s territory is considered allied for [otherCiv].
+     * 
+     *  This includes friendly and allied city-states and the open border treaties.
+     */
+    fun isConsideredAllyTerritory(): Boolean {
+        return (hasOpenBorders)
+                || (civInfo.isCityState() && relationshipLevel() >= RelationshipLevel.Friend)
+    }
     //endregion
 
     //region state-changing functions
@@ -274,11 +290,12 @@ class DiplomacyManager() {
             influence = min(restingPoint, influence + increment)
         else influence = restingPoint
 
+        val civCapitalLocation = if(civInfo.cities.isNotEmpty()) civInfo.getCapital().location else null
         if (getTurnsToRelationshipChange() == 1)
-            otherCiv().addNotification("Your relationship with [${civInfo.civName}] is about to degrade", null, Color.GOLD)
+            otherCiv().addNotification("Your relationship with [${civInfo.civName}] is about to degrade", civCapitalLocation, Color.GOLD)
 
         if (initialRelationshipLevel >= RelationshipLevel.Friend && initialRelationshipLevel != relationshipLevel())
-            otherCiv().addNotification("Your relationship with [${civInfo.civName}] degraded", null, Color.GOLD)
+            otherCiv().addNotification("Your relationship with [${civInfo.civName}] degraded", civCapitalLocation, Color.GOLD)
     }
 
     private fun nextTurnFlags() {
@@ -541,6 +558,7 @@ class DiplomacyManager() {
         otherCivDiplomacy().addModifier(DiplomaticModifiers.RefusedToNotSettleCitiesNearUs,-15f)
         otherCiv().addNotification("[${civInfo.civName}] refused to stop settling cities near us!", Color.MAROON)
     }
+
 
     //endregion
 }
